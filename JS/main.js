@@ -5,25 +5,37 @@ var c, ctx, buttons;
 var paredes = [], bola, meta;
 
 //contadores
-var paradas = 0, tiempo = 500, interval = 50, fin = false;
+var paradas = 0, tiempo = 60000, interval = 50;
+//controladores
+var fin = false, stop = false, win = false;
 
 function controller() {
     c.width = c.width;
     if (!fin) {
         tiempo -= interval;
 
-        if (bola.crashRight(meta)) {
+        //Comprueba si ha llegado a la meta
+        if (bola.crashRight(meta) || bola.crashBottom(meta)) {
             fin = true;
+            win = true;
             return;
         }
 
-        if (paredes.find(p => ((bola.crashTop(p) && bola.dirY == -1) || (bola.crashBottom(p) && bola.dirY == 1) || (bola.crashRight(p) && bola.dirX == 1) || (bola.crashLeft(p) && bola.dirX == -1))) === undefined)
+        if (paredes.find(p => ((bola.crashTop(p) && bola.dirY == -1) || (bola.crashBottom(p) && bola.dirY == 1) || (bola.crashRight(p) && bola.dirX == 1) || (bola.crashLeft(p) && bola.dirX == -1))) === undefined) {
             bola.newPos();
+            stop = false;
+        } else
+            stop = true;
+
+        fin = tiempo <= 0;  //Si se termina el tiempo detiene la partida
+
     } else {
         //Texto en la pantalla
         ctx.font = "30px Arial";
-        ctx.fillText("Has ganado!", c.width / 2 - 70, 70);
+        ctx.fillText((win ? "Has ganado!" : "Has perdido!"), c.width / 2 - 70, 70);
     }
+
+    //Dibuja la bola
     bola.update(ctx);
 
     //Dibuja todas las paredes
@@ -31,11 +43,18 @@ function controller() {
 
     //Dibuja la meta
     meta.update(ctx);
+
     //Texto en la pantalla
-    ctx.font = "15px Arial";
+    ctx.font = "15px Arial";    //Posicion
     ctx.fillText("X=" + bola.x + " Y=" + bola.y, 15, 25);
+
+    if (tiempo < 15000) ctx.fillStyle = "red";  //Tiempo y paradas
     ctx.fillText("Tiempo : " + (tiempo / 1000).toFixed(2) + " s", 200, 25);
     ctx.fillText("Paradas : " + paradas, 400, 25);
+
+    //Meta
+    ctx.fillStyle = "blue";
+    ctx.fillText("META", 520, 325);
 }
 
 //Determina a que direccion se quiere mover
@@ -47,7 +66,7 @@ function directionController() {
         bola.reduceVelocity();
     else {
 
-        if (this.textContent == 'P') paradas++;
+        if (this.textContent == 'P' || stop) paradas++;
 
         if (this.textContent == 'NE' || this.textContent == 'E' || this.textContent == 'SE')
             bola.dirX = -1;
